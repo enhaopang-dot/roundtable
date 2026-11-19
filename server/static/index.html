@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>圆桌 · 多人 Agent 讨论</title>
+<style>
+*{box-sizing:border-box}
+@keyframes sweep{0%{transform:translateX(-130%) skewX(-14deg)}100%{transform:translateX(240%) skewX(-14deg)}}
+@keyframes pulse{0%,100%{opacity:.45}50%{opacity:1}}
+@keyframes flowline{0%{background-position:220% 0}100%{background-position:-220% 0}}
+html,body{margin:0;height:100%}
+body{font:15px/1.7 "Avenir Next","PingFang SC","Microsoft YaHei",sans-serif;
+color:#e6eefc;-webkit-font-smoothing:antialiased;overflow:hidden;
+display:grid;grid-template-columns:1fr 1fr 210px;
+background:radial-gradient(900px 520px at 12% -8%,rgba(95,208,255,.18),transparent 62%),
+radial-gradient(760px 520px at 92% 108%,rgba(169,139,255,.16),transparent 62%),#06090f}
+
+/* ---------- 左：讨论 ---------- */
+main{overflow-y:auto;padding:0 32px 120px;position:relative;
+background:linear-gradient(180deg,rgba(95,208,255,.055),transparent 42%),#05080f;
+box-shadow:inset -40px 0 60px -60px rgba(95,208,255,.9)}
+header{display:flex;align-items:flex-start;gap:14px;position:sticky;top:0;z-index:3;
+margin:0 -32px 18px;padding:24px 32px 14px;min-height:150px;box-sizing:border-box;
+background:linear-gradient(180deg,#05080f 80%,rgba(5,8,15,.96) 100%);
+backdrop-filter:blur(14px);border-bottom:1px solid transparent}
+header::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;pointer-events:none;
+background:linear-gradient(90deg,transparent,rgba(0,240,255,.9) 35%,#8f9bff 50%,rgba(0,240,255,.9) 65%,transparent);
+background-size:220% 100%;animation:flowline 5s linear infinite;
+box-shadow:0 0 12px rgba(0,240,255,.55)}
+.mark{width:3px;height:40px;border-radius:2px;background:linear-gradient(180deg,#5fd0ff,#a98bff);
+box-shadow:0 0 18px rgba(95,208,255,.7);flex:none}
+h1{margin:0;font-size:20px;font-weight:650;letter-spacing:.01em;
+text-shadow:0 0 22px rgba(0,240,255,.35)}
+.sub{color:#8fa2c0;font-size:12.5px;margin-top:3px}
+.status{display:flex;gap:12px;margin-top:10px;font-size:11.5px;color:#8fa2c0;flex-wrap:wrap;align-items:center}
+.status b{color:#cfe2ff}
+.pill{padding:1px 9px;border-radius:999px;color:#5fd0ff;border:1px solid rgba(95,208,255,.4);
+background:rgba(95,208,255,.08);font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.1em}
+.pill::before{content:"● ";animation:pulse 2s infinite;color:#00f0ff}
+.msg{margin-bottom:14px;max-width:100%;position:relative}
+.msg .hd{font-size:11px;color:#7f93af;margin-bottom:4px;display:flex;gap:8px;align-items:center}
+.msg .hd b{color:#c6d6ea;font-weight:600}
+.msg .hd span{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.1em;
+color:#5fd0ff;border:1px solid rgba(95,208,255,.28);padding:0 6px;border-radius:999px}
+.msg .bd{padding:11px 14px;white-space:pre-wrap;border-radius:11px;font-size:14px;
+background:rgba(255,255,255,.05);border:1px solid rgba(140,190,255,.16);
+backdrop-filter:blur(14px);position:relative;overflow:hidden}
+.msg .bd::after{content:"";position:absolute;top:-40%;left:0;width:45%;height:180%;pointer-events:none;
+background:linear-gradient(90deg,transparent,rgba(160,225,255,.13),transparent);
+animation:sweep 9s ease-in-out infinite}
+.agent .bd{box-shadow:-2px 0 18px -8px rgba(95,208,255,.6)}
+.human .bd{background:rgba(169,139,255,.09);border-color:rgba(169,139,255,.32);
+box-shadow:-2px 0 18px -8px rgba(169,139,255,.55)}
+.host .bd{background:rgba(255,196,107,.07);border-color:rgba(255,196,107,.28);color:#ffd79b}
+.pass .bd{color:#7f93af;font-style:italic}
+.system .bd{background:transparent;border:none;color:#7f93af;font-size:12.5px;padding:2px 0}
+.system .bd::after{display:none}
+
+/* ---------- 中：提炼 ---------- */
+.sum{border-left:1px solid rgba(255,42,157,.22);overflow-y:auto;padding:0 20px 40px;position:relative;
+background:linear-gradient(180deg,rgba(255,42,157,.075),transparent 45%),#0a0613;
+box-shadow:inset 40px 0 60px -60px rgba(255,42,157,.9),inset -40px 0 60px -60px rgba(0,240,255,.75)}
+.sum::before{content:"";position:absolute;left:-1px;top:0;width:1px;height:140px;
+background:linear-gradient(180deg,#ff2a9d,#5fd0ff,transparent);box-shadow:0 0 12px rgba(255,42,157,.6)}
+.sum::after{content:"";position:absolute;right:-1px;top:0;width:1px;height:100px;
+background:linear-gradient(180deg,rgba(0,240,255,.55),transparent)}
+.sumtop{position:sticky;top:0;z-index:3;margin:0 -20px 10px;padding:20px 20px 12px;
+min-height:150px;box-sizing:border-box;display:flex;flex-direction:column;
+background:linear-gradient(180deg,#0a0613 78%,rgba(10,6,19,.96) 100%);
+backdrop-filter:blur(14px);border-bottom:1px solid transparent}
+.sumtop::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;pointer-events:none;
+background:linear-gradient(90deg,transparent,rgba(255,42,157,.95) 35%,#8f5cff 50%,rgba(255,42,157,.95) 65%,transparent);
+background-size:220% 100%;animation:flowline 5s linear infinite;
+box-shadow:0 0 12px rgba(255,42,157,.6)}
+.badge{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:9px;margin-bottom:12px;
+border:1px solid rgba(255,42,157,.28);background:rgba(255,42,157,.07);
+box-shadow:0 0 18px -8px rgba(255,42,157,.9),inset 0 0 14px -10px rgba(255,42,157,.9)}
+.pulse{width:7px;height:7px;border-radius:50%;background:#ff2a9d;flex:none;position:relative;
+box-shadow:0 0 10px #ff2a9d}
+.pulse::after{content:"";position:absolute;inset:-4px;border-radius:50%;
+border:1px solid rgba(255,42,157,.6);animation:ping 1.8s ease-out infinite}
+@keyframes ping{0%{transform:scale(.7);opacity:.9}100%{transform:scale(1.9);opacity:0}}
+.pulse.idle{background:#4a5b73;box-shadow:none}
+.pulse.idle::after{animation:none;border-color:transparent}
+.pulse.busy{background:#00f0ff;box-shadow:0 0 12px #00f0ff}
+.pulse.busy::after{border-color:rgba(0,240,255,.7)}
+.badge .bt{font-size:11.5px;color:#ff8cc6;letter-spacing:.06em;font-weight:600}
+.badge .bm{margin-left:auto;font-size:10.5px;color:#7f93af;font-family:"JetBrains Mono",monospace}
+.sum h2{font-size:10px;letter-spacing:.26em;color:#ff6bb5;text-shadow:0 0 14px rgba(255,42,157,.5);
+margin:14px 0 4px;text-transform:uppercase;font-weight:600}
+.sum .by{font-size:10.5px;color:#54637a;margin-bottom:0;margin-top:auto;font-family:"JetBrains Mono",monospace}
+.s-empty{color:#5d7191;font-size:12.5px;line-height:1.8}
+.s-body{font-size:13.5px;line-height:1.9;color:#cfd9ea;white-space:pre-wrap}
+.s-body b{color:#8fe3ff;font-weight:600}
+.s-body .k{color:#7ee0ff}
+.s-line{margin:0 0 7px;padding-left:11px;position:relative}
+.s-line::before{content:"";position:absolute;left:0;top:8px;width:4px;height:4px;border-radius:50%;
+background:#ff2a9d;box-shadow:0 0 9px rgba(255,42,157,.95)}
+.s-h{margin:16px 0 7px;font-size:10.5px;letter-spacing:.18em;color:#7fe3ff;text-transform:uppercase;
+font-family:"JetBrains Mono",monospace;border-bottom:1px solid rgba(0,240,255,.22);padding-bottom:5px;
+text-shadow:0 0 12px rgba(0,240,255,.45)}
+.s-h:first-child{margin-top:0}
+.s-edit{margin-top:16px;display:flex;gap:7px}
+.s-edit textarea{width:100%;min-height:180px;font:inherit;font-size:12px;line-height:1.7;
+padding:9px 11px;border-radius:9px;resize:vertical;color:#dbe6f5;
+background:rgba(255,255,255,.04);border:1px solid rgba(140,190,255,.2)}
+.s-btn{padding:6px 11px;border-radius:8px;border:1px solid rgba(140,190,255,.22);
+background:rgba(255,255,255,.06);color:#c3d3e6;font:inherit;font-size:11.5px;cursor:pointer}
+
+/* ---------- 右：规则与资料 ---------- */
+aside{border-left:1px solid rgba(0,240,255,.2);overflow-y:auto;padding:22px 13px 30px;
+background:linear-gradient(180deg,rgba(0,240,255,.06),transparent 50%),#040a10;
+box-shadow:inset 40px 0 60px -70px rgba(0,240,255,.9)}
+aside h2{font-size:9.5px;letter-spacing:.24em;color:#5d7392;margin:0 0 8px;text-transform:uppercase;font-weight:600}
+aside h2:not(:first-child){margin-top:18px}
+.mat{padding:6px 8px;margin-bottom:5px;border-radius:7px;font-size:11.5px;color:#a8bcd6;line-height:1.5;
+border:1px solid rgba(140,190,255,.13);background:rgba(255,255,255,.03)}
+.mat summary{list-style:none;cursor:pointer}
+.mat summary::-webkit-details-marker{display:none}
+.mat summary::before{content:"▸ ";color:#5fd0ff;font-size:9px}
+.mat[open] summary::before{content:"▾ "}
+.mat-body{margin-top:6px;font-size:11px;line-height:1.6;color:#93a6c0;white-space:pre-wrap;
+max-height:220px;overflow-y:auto;border-top:1px solid rgba(140,190,255,.1);padding-top:6px}
+.who{padding:7px 8px;margin-bottom:5px;border-radius:8px;border:1px solid rgba(140,190,255,.13);
+background:rgba(255,255,255,.03)}
+.who b{display:block;font-size:11.5px;font-weight:600;line-height:1.4}
+.who small{font-size:10px;color:#7f93af;display:block;margin-top:1px}
+.who.done{border-color:rgba(95,208,255,.5);background:rgba(95,208,255,.08)}
+.who.done small{color:#5fd0ff}
+.who.human{border-color:rgba(169,139,255,.4);background:rgba(169,139,255,.07)}
+.who.human b{color:#c9b6ff}
+.tk{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.tk input{padding:6px 8px;border-radius:7px;border:1px solid rgba(140,190,255,.2);
+background:rgba(255,255,255,.04);color:#e6eefc;font:inherit;font-size:11px}
+.tk button{padding:6px;border-radius:7px;border:1px solid rgba(140,190,255,.22);
+background:rgba(255,255,255,.06);color:#c3d3e6;font:inherit;font-size:11px;cursor:pointer}
+
+/* ---------- 底部 ---------- */
+.dock{position:fixed;left:0;right:calc(50% + 105px);bottom:0;padding:12px 32px 16px;display:flex;gap:9px;
+background:linear-gradient(180deg,transparent,rgba(5,8,15,.96) 42%);backdrop-filter:blur(16px);z-index:5;
+border-top:1px solid transparent;border-image:linear-gradient(90deg,rgba(0,240,255,.4),rgba(255,42,157,.35),transparent) 1}
+.dock textarea{flex:1;height:48px;padding:9px 13px;border-radius:11px;resize:none;font:inherit;font-size:13.5px;
+color:#e6eefc;background:rgba(255,255,255,.05);border:1px solid rgba(140,190,255,.2)}
+.dock button{padding:9px 14px;border-radius:9px;border:1px solid rgba(140,190,255,.22);
+background:rgba(255,255,255,.06);color:#e6eefc;font:inherit;font-size:12.5px;cursor:pointer}
+.dock button.primary{background:linear-gradient(135deg,#5fd0ff,#8f9bff);border:none;color:#04121f;font-weight:700;
+box-shadow:0 0 24px rgba(95,208,255,.45)}
+.empty{color:#6d8099;font-size:12px;padding:4px 0}
+/* ---------- 滚动条 ---------- */
+main,.sum,aside{scrollbar-width:thin;scrollbar-color:rgba(0,240,255,.45) transparent}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:rgba(255,255,255,.02)}
+::-webkit-scrollbar-thumb{border-radius:6px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-corner{background:transparent}
+main::-webkit-scrollbar-thumb{background:linear-gradient(180deg,rgba(0,240,255,.05),rgba(0,240,255,.55),rgba(143,155,255,.55),rgba(0,240,255,.05));background-clip:padding-box}
+main::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,rgba(0,240,255,.35),rgba(0,240,255,.95),rgba(143,155,255,.9),rgba(0,240,255,.35));background-clip:padding-box}
+main::-webkit-scrollbar-track{background:rgba(0,240,255,.04)}
+.sum{scrollbar-color:rgba(255,42,157,.45) transparent}
+.sum::-webkit-scrollbar-thumb{background:linear-gradient(180deg,rgba(255,42,157,.06),rgba(255,42,157,.62),rgba(143,92,255,.62),rgba(255,42,157,.06));background-clip:padding-box}
+.sum::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,rgba(255,42,157,.35),rgba(255,42,157,.95),rgba(143,92,255,.9),rgba(255,42,157,.35));background-clip:padding-box}
+.sum::-webkit-scrollbar-track{background:rgba(255,42,157,.04)}
+aside{scrollbar-color:rgba(0,240,255,.3) transparent}
+aside::-webkit-scrollbar-thumb{background:linear-gradient(180deg,rgba(0,240,255,.05),rgba(0,240,255,.4),rgba(0,240,255,.05));background-clip:padding-box}
+aside::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,rgba(0,240,255,.25),rgba(0,240,255,.85),rgba(0,240,255,.25));background-clip:padding-box}
+.mat-body::-webkit-scrollbar,.s-edit textarea::-webkit-scrollbar{width:6px}
+.mat-body::-webkit-scrollbar-thumb,.s-edit textarea::-webkit-scrollbar-thumb{background:rgba(140,190,255,.3);border-radius:6px;border:none}
+
+@media(max-width:1200px){
+  body{grid-template-columns:1fr;overflow:auto}
+  .sum,aside{border-left:none;border-top:1px solid rgba(140,190,255,.14)}
+  .dock{right:0;padding:12px 18px 14px}
+}
+</style>
+</head>
+<body>
+
+<main>
+  <header>
+    <div class="mark"></div>
+    <div style="flex:1">
+      <h1 id="title">圆桌</h1>
+      <div class="sub" id="topic"></div>
+      <div class="status">
+        <span>轮次 <b id="round">-</b></span>
+        <span class="pill" id="status">-</span>
+        <span id="waiting"></span>
+      </div>
+    </div>
+  </header>
+  <section id="feed"><div class="empty">等待第一条发言…</div></section>
+</main>
+
+<div class="sum">
+  <div class="sumtop">
+    <div class="badge" id="sbadge">
+      <span class="pulse" id="sdot"></span>
+      <span class="bt" id="sstate">自动提炼</span>
+      <span class="bm" id="smeta"></span>
+    </div>
+    <h2>当前提炼</h2>
+    <div class="by" id="sby">&nbsp;</div>
+  </div>
+  <div id="sbody"><div class="s-empty">还没有提炼。点下面的按钮写一版，或者让 Agent 收敛时更新。</div></div>
+  <div id="sedit" style="display:none">
+    <div class="s-edit"><textarea id="stext" placeholder="按行写，以「## 」开头做小标题，其他行做要点"></textarea></div>
+    <div class="s-edit"><button class="s-btn" onclick="saveSummary()">保存</button>
+      <button class="s-btn" onclick="toggleEdit(false)">取消</button></div>
+  </div>
+  <div id="sopen" style="margin-top:14px"><button class="s-btn" onclick="toggleEdit(true)">编辑提炼</button></div>
+</div>
+
+<aside>
+  <h2>参考信息</h2>
+  <div id="materials"><div class="empty">暂无</div></div>
+  <h2>参与者</h2>
+  <div id="people"><div class="empty">还没有人加入</div></div>
+  <h2>Token</h2>
+  <div class="tk">
+    <input type="password" id="tok" placeholder="本人或主持人">
+    <button onclick="saveToken()">保存</button>
+  </div>
+</aside>
+
+<div class="dock">
+  <textarea id="say" placeholder="插一句（不计入轮次，双方 AI 都会读到）"></textarea>
+  <button class="primary" onclick="say()">发言</button>
+  <button onclick="ctl('pause')">暂停</button>
+  <button onclick="ctl('stop')">结束</button>
+</div>
+
+<script>
+const qs = new URLSearchParams(location.search);
+const RID = qs.get('room');
+let lastId = 0, token = localStorage.getItem('rt_token_' + RID) || '', matsCache = '', sumCache = '';
+
+if (!RID) {
+  document.body.innerHTML = '<div style="padding:40px;font:16px system-ui">缺少圆桌编号，请用 /?room=xxxx 打开。</div>';
+} else {
+  document.getElementById('tok').value = token;
+  poll(); setInterval(poll, 2000);
+}
+
+function esc(s){ return (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function saveToken(){
+  token = document.getElementById('tok').value.trim();
+  localStorage.setItem('rt_token_' + RID, token);
+}
+
+function renderSummary(text){
+  if (!text.trim()) return '<div class="s-empty">还没有提炼。</div>';
+  return text.split('\n').map(l => {
+    const t = l.trim();
+    if (!t) return '';
+    if (t.startsWith('## ')) return `<div class="s-h">${esc(t.slice(3))}</div>`;
+    if (t.startsWith('# ')) return `<div class="s-h">${esc(t.slice(2))}</div>`;
+    const body = esc(t.replace(/^[-·•]\s*/, ''));
+    return `<p class="s-line">${body}</p>`;
+  }).join('');
+}
+
+function fmtGap(ts){
+  const d = Math.max(0, Date.now()/1000 - ts);
+  if (d < 60) return '刚刚同步';
+  if (d < 3600) return Math.floor(d/60) + ' 分钟前';
+  return Math.floor(d/3600) + ' 小时前';
+}
+
+async function poll(){
+  try{
+    const s = await (await fetch('api/rooms/' + RID)).json();
+    document.getElementById('title').textContent = s.room.title;
+    document.getElementById('topic').textContent = s.room.topic;
+    const mr = s.room.max_rounds > 0 ? s.room.max_rounds : '不限';
+    document.getElementById('round').textContent = s.room.current_round + ' / ' + mr;
+    document.getElementById('status').textContent =
+      {open:'进行中', paused:'已暂停', finished:'已结束'}[s.room.status] || s.room.status;
+    document.getElementById('waiting').textContent =
+      s.waiting_for.length ? '本轮等待：' + s.waiting_for.join('、') : '本轮已齐';
+
+    // 提炼
+    const pend = s.pending_msgs || 0;
+    const dot = document.getElementById('sdot');
+    const state = document.getElementById('sstate');
+    const meta = document.getElementById('smeta');
+    if (pend > 0) {
+      dot.className = 'pulse busy'; state.textContent = '自动提炼中';
+      meta.textContent = pend + ' 条待处理';
+    } else {
+      dot.className = 'pulse'; state.textContent = '自动提炼';
+      const u = s.room.summary_updated;
+      meta.textContent = u ? fmtGap(u) : '等待中';
+    }
+
+    const st = s.room.summary || '';
+    if (st !== sumCache) {
+      sumCache = st;
+      document.getElementById('sbody').innerHTML = renderSummary(st);
+      document.getElementById('stext').value = st;
+      const upd = s.room.summary_updated;
+      document.getElementById('sby').textContent = upd
+        ? '由 ' + (s.room.summary_by || '—') + ' 更新 · ' +
+          new Date(upd*1000).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})
+        : '尚未更新';
+    }
+
+    document.getElementById('people').innerHTML = s.participants.map(p => {
+      const spoke = p.last_round >= s.room.current_round;
+      return `<div class="who ${spoke?'done':''}"><b>${esc(p.name)}</b>
+        <small>Agent ${spoke?'· 已发言':''}</small></div>
+      <div class="who human"><b>${esc(p.human_name || p.name)}</b><small>本人 · 随时插话</small></div>`;
+    }).join('') || '<div class="empty">还没有人加入</div>';
+
+    const mats = await (await fetch('api/rooms/' + RID + '/materials')).json();
+    const mkey = JSON.stringify(mats.materials);
+    if (mkey !== matsCache) {
+      matsCache = mkey;
+      const openSet = new Set([...document.querySelectorAll('details.mat[open]')].map(d => d.dataset.id));
+      const order = {brief:0, rules:1, event:2, background:3};
+      const list = [...mats.materials].sort((a,b) =>
+        (order[a.category] ?? 2) - (order[b.category] ?? 2) || a.id - b.id);
+      document.getElementById('materials').innerHTML = list.map(mt =>
+        `<details class="mat" data-id="${mt.id}"${openSet.has(String(mt.id))?' open':''}>
+           <summary>${esc(mt.title)}</summary>
+           <div class="mat-body">${esc(mt.content)}</div></details>`
+      ).join('') || '<div class="empty">暂无</div>';
+    }
+
+    const m = await (await fetch('api/rooms/' + RID + '/messages?after=' + lastId)).json();
+    if (m.messages.length) {
+      const feed = document.getElementById('feed');
+      if (lastId === 0) feed.innerHTML = '';
+      feed.insertAdjacentHTML('beforeend', m.messages.map(render).join(''));
+      lastId = m.messages[m.messages.length - 1].id;
+      const main = document.querySelector('main');
+      main.scrollTo({top: main.scrollHeight, behavior:'smooth'});
+    }
+  }catch(e){ /* 静默重试 */ }
+}
+
+function render(m){
+  const cls = ['system','host','human','pass'].includes(m.kind) ? m.kind : 'agent';
+  const when = new Date(m.created_at*1000).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+  return `<div class="msg ${cls}">
+    <div class="hd"><b>${esc(m.name)}</b>${m.round ? `<span>第 ${m.round} 轮</span>` : ''}
+      <span style="border:none;color:#5d7392">${when}</span></div>
+    <div class="bd">${esc(m.content)}</div></div>`;
+}
+
+function toggleEdit(on){
+  document.getElementById('sedit').style.display = on ? 'block' : 'none';
+  document.getElementById('sopen').style.display = on ? 'none' : 'block';
+}
+
+async function saveSummary(){
+  if (!token) { alert('先在右侧填 token'); return; }
+  const content = document.getElementById('stext').value;
+  const r = await fetch('api/rooms/' + RID + '/summary', {
+    method:'POST', headers:{'Content-Type':'application/json','X-Token':token},
+    body: JSON.stringify({content})});
+  if (r.ok) { sumCache = ''; toggleEdit(false); poll(); }
+  else { alert((await r.json()).detail || '保存失败'); }
+}
+
+async function say(){
+  const el = document.getElementById('say');
+  const content = el.value.trim();
+  if (!content) return;
+  if (!token) { alert('先在右侧填 token：本人 token 或主持人 token'); return; }
+  const r = await fetch('api/rooms/' + RID + '/comment', {
+    method:'POST', headers:{'Content-Type':'application/json','X-Token':token},
+    body: JSON.stringify({content})});
+  if (r.ok) { el.value = ''; poll(); } else { alert((await r.json()).detail || '发送失败'); }
+}
+
+async function ctl(action){
+  if (!token) { alert('需要主持人 token 才能控制'); return; }
+  const r = await fetch('api/rooms/' + RID + '/control', {
+    method:'POST', headers:{'Content-Type':'application/json','X-Token':token},
+    body: JSON.stringify({action})});
+  if (!r.ok) alert((await r.json()).detail || '操作失败');
+  poll();
+}
+</script>
+</body>
+</html>
